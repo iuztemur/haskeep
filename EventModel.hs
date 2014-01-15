@@ -5,6 +5,7 @@ module EventModel
     eventDateTime
   , EventRecurrence(..)
   , Event(..)
+  , nextOccurence
   ) where
 
 import Control.Applicative ((<$>), (<*>), empty)
@@ -41,12 +42,49 @@ data EventRecurrence = None
                      | Weekly
                      | Monthly
                      | Yearly
-                     deriving (Show)
+                     deriving (Show, Eq)
 
 data Event = Event { name       :: EventName
                    , dateTime   :: EventDateTime
                    , recurrence :: EventRecurrence
                    } deriving (Show)
+
+-- Recurrence
+
+nextDay :: EventDateTime -> EventDateTime
+nextDay edt = UTCTime ( (succ . utctDay) edt )
+                      ( utctDayTime edt )
+
+nextWeek :: EventDateTime -> EventDateTime
+nextWeek edt = iterate nextDay edt !! 7
+
+nextMonth :: EventDateTime -> EventDateTime
+nextMonth edt = UTCTime ( addGregorianMonthsClip 1 (utctDay edt) )
+                        ( utctDayTime edt )
+
+nextYear :: EventDateTime -> EventDateTime
+nextYear edt = UTCTime ( addGregorianYearsClip 1 (utctDay edt) )
+                       ( utctDayTime edt )
+
+nextOccurence :: Event -> Event
+nextOccurence e | recurrence e == Daily
+                  = Event ( name e )
+                          ( (nextDay . dateTime) e )
+                          ( recurrence e )
+                | recurrence e == Weekly
+                  = Event ( name e )
+                          ( (nextWeek . dateTime) e )
+                          ( recurrence e )
+                | recurrence e == Monthly
+                  = Event ( name e )
+                          ( (nextMonth . dateTime) e )
+                          ( recurrence e )
+                | recurrence e == Yearly
+                  = Event ( name e )
+                          ( (nextYear . dateTime) e )
+                          ( recurrence e )
+                | otherwise
+                  = undefined
 
 -- Data persistence
 
@@ -73,5 +111,5 @@ instance FromJSON Event where
   parseJSON (Object v) = Event <$>
                          v .: "name" <*>
                          v .: "dateTime" <*>
-                         (parseRecurrence <$> v .: "recurrence")
+                         ( parseRecurrence <$> v .: "recurrence")
   parseJSON _          = empty

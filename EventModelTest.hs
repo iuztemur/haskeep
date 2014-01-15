@@ -8,6 +8,23 @@ import EventModel
 main :: IO ()
 main = do
 
+  -- dates manipulation
+  {-let singleEvent = Event "n" (eventDateTime (2014,1,31) (22,3,3)) None
+  print singleEvent
+  print $ nextOccurence singleEvent-}
+  let dailyEvent = Event "d" (eventDateTime (2014,1,31) (22,3,3)) Daily
+  print dailyEvent
+  print $ nextOccurence dailyEvent
+  let weeklyEvent = Event "w" (eventDateTime (2014,1,29) (22,3,3)) Weekly
+  print weeklyEvent
+  print $ nextOccurence weeklyEvent
+  let monthlyEvent = Event "m" (eventDateTime (2014,1,29) (22,3,3)) Monthly
+  print monthlyEvent
+  print $ nextOccurence monthlyEvent
+  let yearlyEvent = Event "y" (eventDateTime (2016,2,29) (22,3,3)) Yearly
+  print yearlyEvent
+  print $ nextOccurence yearlyEvent
+
   -- Event
   BL.putStrLn $ encode $ Event "w" (eventDateTime (2000,3,3) (22,3,3)) Monthly
   let event = decode "{\"name\":\"w\",\"recurrence\":{\"recurrence\":\"Month\
