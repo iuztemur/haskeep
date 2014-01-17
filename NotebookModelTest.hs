@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Aeson
 import Data.Maybe (fromJust)
