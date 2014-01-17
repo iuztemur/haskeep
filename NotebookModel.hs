@@ -9,19 +9,24 @@ module NotebookModel
   , markAsDone
   , saveToFile
   , loadFromFile
+  , isToday
+  , isDone
   ) where
 
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Control.Applicative ((<$>), (<*>), empty)
 import Data.Aeson
 import Data.Maybe (fromJust)
+import Data.Time (UTCTime)
 
 import EventModel
 
 -- Entry in the notebook
 
+type Done = Bool
+
 data Entry = Entry { event :: Event
-                   , done  :: Bool
+                   , done  :: Done
                    } deriving (Show)
 
 instance ToJSON Entry where
@@ -48,7 +53,6 @@ removeEntry n (x:xs) = x : removeEntry (n-1) xs
 
 markAsDone :: Int -> Notebook -> Notebook
 markAsDone _ []     = []
--- markAsDone 1 (x:xs) = nextOccurence x : xs
 markAsDone 1 (x:xs) | (recurrence . event) x == None
                       = xs
                     | otherwise
@@ -66,3 +70,11 @@ loadFromFile :: IO Notebook
 loadFromFile = do
   notebookFromFile <- BL.readFile "notebook.json"
   return $ fromJust $ decode notebookFromFile
+
+-- Filters
+
+isToday :: UTCTime -> Entry -> Bool
+isToday d e = (dateTime . event) e == d
+
+isDone :: Done -> Entry -> Bool
+isDone d e = done e == d
