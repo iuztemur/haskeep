@@ -14,7 +14,7 @@ printDoneUndone e | done e    = "DONE"
 printNotebookHeader :: IO ()
 printNotebookHeader = putStrLn $
                       "No :: Name :: Date & time"
-                      ++ " :: DONE/TODO "
+                      ++ " :: DONE/TODO :: Recurrence"
 
 
 printEntry :: Int -> Entry -> IO ()
@@ -22,7 +22,8 @@ printEntry n e = putStrLn $
                   show n ++ " :: " ++
                   (name . event) e ++ " :: " ++
                   show ( (dateTime . event) e) ++
-                  " :: " ++ printDoneUndone e
+                  " :: " ++ printDoneUndone e ++
+                  " :: " ++ show ((recurrence . event) e)
 
 printNotebookIterate :: Int -> Notebook -> IO ()
 printNotebookIterate _ []     = putStrLn ""
