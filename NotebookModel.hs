@@ -9,15 +9,15 @@ module NotebookModel
   , markAsDone
   , saveToFile
   , loadFromFile
-  , isToday
+  , isForToday
   , isDone
   ) where
 
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Control.Applicative ((<$>), (<*>), empty)
 import Data.Aeson
-import Data.Maybe (fromJust)
-import Data.Time (UTCTime)
+import Data.Time
+import Data.Maybe
 
 import EventModel
 
@@ -54,7 +54,9 @@ removeEntry n (x:xs) = x : removeEntry (n-1) xs
 markAsDone :: Int -> Notebook -> Notebook
 markAsDone _ []     = []
 markAsDone 1 (x:xs) | (recurrence . event) x == None
-                      = xs
+                      = Entry (event x)
+                              True
+                      : xs
                     | otherwise
                       = Entry ((nextOccurence . event) x)
                               False
@@ -73,8 +75,9 @@ loadFromFile = do
 
 -- Filters
 
-isToday :: UTCTime -> Entry -> Bool
-isToday d e = (dateTime . event) e == d
+isForToday :: Day -> Entry -> Bool
+isForToday d e = d >= (utctDay . dateTime . event) e
+              && (not . done) e
 
 isDone :: Done -> Entry -> Bool
 isDone d e = done e == d
