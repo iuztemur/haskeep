@@ -68,8 +68,13 @@ goToTheNextOne Welcome "l" today _ = do
   goToTheNextOne Welcome "" today notebook
 
 goToTheNextOne Welcome "s" today notebook = do
+  putStrLn ""
   saveToFile notebook
   putStrLn "successfully saved to notebook.json"
+  goToTheNextOne Welcome "" today notebook
+
+goToTheNextOne Welcome "p" today notebook = do
+  printNotebookFiltered (isDone True) notebook
   goToTheNextOne Welcome "" today notebook
 
 goToTheNextOne Welcome "q" _ _ = exitSuccess
@@ -77,7 +82,8 @@ goToTheNextOne Welcome "q" _ _ = exitSuccess
 goToTheNextOne Welcome _   today notebook = do
   putStrLn ""
   putStrLn "(A)ll / (T)oday's / (D)ate / (N)ew entry /"
-  putStrLn "(L)oad from file / (S)ave to file / (Q)uit"
+  putStrLn "(L)oad from file / (S)ave to file / (P)ast /"
+  putStrLn "(Q)uit"
   choice <- getLine
   goToTheNextOne Welcome (map toLower choice) today notebook
 
@@ -136,7 +142,7 @@ goToTheNextOne NewEntry _ today notebook = do
   putStrLn "added new entry"
   goToTheNextOne Welcome "" today (addEntry newEntry notebook)
 
--- All the defining steps with in-line input checks
+-- New entry definition steps
 
 data Step = NameStep
           | YearStep
@@ -158,23 +164,21 @@ defineEntry NameStep params = do
 defineEntry YearStep params = do
   putStrLn ""
   putStrLn "Gimme the year:"
-  yearString <- getLine
-  let year = read yearString :: Integer
-  if year > 2013
+  year <- getLine
+  if inputCorrect YearStep year
     then
-      defineEntry MonthStep $ Map.insert "year" yearString params
+      defineEntry MonthStep $ Map.insert "year" year params
     else do
       putStrLn "Stop living in the past, mate!"
       defineEntry YearStep params
 
 defineEntry MonthStep params = do
   putStrLn ""
-  putStrLn "Gimme the month:"
-  monthString <- getLine
-  let month = read monthString :: Int
-  if month > 0 && month < 13
+  putStrLn "Gimme the month (1-12):"
+  month <- getLine
+  if inputCorrect MonthStep month
     then
-      defineEntry DayStep $ Map.insert "month" monthString params
+      defineEntry DayStep $ Map.insert "month" month params
     else do
       putStrLn "Learn your months, mate!"
       defineEntry MonthStep params
@@ -182,25 +186,21 @@ defineEntry MonthStep params = do
 defineEntry DayStep params = do
   putStrLn ""
   putStrLn "Gimme the day:"
-  dayString <- getLine
-  let day = read dayString :: Int
-  let maxDay = maxDayForMonth params
-  if day > 0 && day <= maxDay
+  day <- getLine
+  if dayCorrect params day
     then
-      defineEntry HourStep $ Map.insert "day" dayString params
+      defineEntry HourStep $ Map.insert "day" day params
     else do
-      putStrLn $ "The month has " ++ show maxDay ++ " days."
-      putStrLn "So learn your days, mate!"
+      putStrLn "Learn your days, mate!"
       defineEntry DayStep params
 
 defineEntry HourStep params = do
   putStrLn ""
   putStrLn "What time? Hour (0-23):"
-  hourString <- getLine
-  let hour = read hourString :: Int
-  if hour >= 0 && hour <= 23
+  hours <- getLine
+  if inputCorrect HourStep hours
     then
-      defineEntry MinuteStep $ Map.insert "hour" hourString params
+      defineEntry MinuteStep $ Map.insert "hour" hours params
     else do
       putStrLn "Learn your hours, mate!"
       defineEntry HourStep params
@@ -208,12 +208,11 @@ defineEntry HourStep params = do
 defineEntry MinuteStep params = do
   putStrLn ""
   putStrLn "What time? Minutes (0-59):"
-  minutesString <- getLine
-  let minutes = read minutesString :: Int
-  if minutes >= 0 && minutes <= 59
+  minutes <- getLine
+  if inputCorrect MinuteStep minutes
     then
       defineEntry ReocurrenceStep
-                  $ Map.insert "minutes" minutesString params
+                  $ Map.insert "minutes" minutes params
     else do
       putStrLn "Learn your minutes, mate!"
       defineEntry MinuteStep params
@@ -244,8 +243,6 @@ defineEntry DefinitiveStep params = do
                          (hour,minutes,0)) reoc
   return $ Entry entryEvent False
 
--- Utilities: for recurrence user input
-
 decodeRecurrence :: String -> EventRecurrence
 decodeRecurrence "n" = None
 decodeRecurrence "d" = Daily
@@ -253,4 +250,35 @@ decodeRecurrence "w" = Weekly
 decodeRecurrence "m" = Monthly
 decodeRecurrence "y" = Yearly
 decodeRecurrence _   = undefined
+
+-- User input checks
+
+dayCorrect :: Map.Map String String -> String -> Bool
+dayCorrect params y
+    | not $ all isNumber y = False
+    | otherwise            = number > 0 && number <= maxDay
+    where number = read y :: Int
+          maxDay = maxDayForMonth params
+
+inputCorrect :: Step -> String -> Bool
+
+inputCorrect YearStep y
+    | not $ all isNumber y = False
+    | otherwise            = number >= 2014
+    where number = read y :: Integer
+
+inputCorrect MonthStep m
+    | not $ all isNumber m = False
+    | otherwise            = number >= 1 && number <= 13
+    where number = read m :: Int
+
+inputCorrect HourStep h
+    | not $ all isNumber h = False
+    | otherwise            = number >= 0 && number <= 23
+    where number = read h :: Int
+
+inputCorrect MinuteStep m
+    | not $ all isNumber m = False
+    | otherwise            = number >= 0 && number <= 59
+    where number = read m :: Int
 
