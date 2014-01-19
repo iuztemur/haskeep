@@ -29,16 +29,6 @@ data Entry = Entry { event :: Event
                    , done  :: Done
                    } deriving (Show)
 
-instance ToJSON Entry where
-  toJSON (Entry e d) = object [ "event" .= e
-                              , "done"  .= d ]
-
-instance FromJSON Entry where
-  parseJSON (Object v) = Entry <$>
-                         v .: "event" <*>
-                         v .: "done"
-  parseJSON _          = empty
-
 -- Notebook full of entries
 
 type Notebook = [Entry]
@@ -64,6 +54,16 @@ markAsDone 1 (x:xs) | (recurrence . event) x == None
 markAsDone n (x:xs) = x : markAsDone (n-1) xs
 
 -- Persistance
+
+instance ToJSON Entry where
+  toJSON (Entry e d) = object [ "event" .= e
+                              , "done"  .= d ]
+
+instance FromJSON Entry where
+  parseJSON (Object v) = Entry <$>
+                         v .: "event" <*>
+                         v .: "done"
+  parseJSON _          = empty
 
 saveToFile :: Notebook -> IO ()
 saveToFile n = BL.writeFile "notebook.json" $ encode n
