@@ -7,23 +7,10 @@ module NotebookPrinter
 import NotebookModel
 import EventModel
 
-printDoneUndone :: Entry -> String
-printDoneUndone e | done e    = "DONE"
-                  | otherwise = "TODO"
+-- Print all entries in notebook
 
-printNotebookHeader :: IO ()
-printNotebookHeader = putStrLn $
-                      "No :: Name :: Date & time"
-                      ++ " :: DONE/TODO :: Recurrence"
-
-
-printEntry :: Int -> Entry -> IO ()
-printEntry n e = putStrLn $
-                  show n ++ " :: " ++
-                  (name . event) e ++ " :: " ++
-                  show ( (dateTime . event) e) ++
-                  " :: " ++ printDoneUndone e ++
-                  " :: " ++ show ((recurrence . event) e)
+printNotebook :: Notebook -> IO ()
+printNotebook = printNotebookIterate 0
 
 printNotebookIterate :: Int -> Notebook -> IO ()
 printNotebookIterate _ []     = putStrLn ""
@@ -34,8 +21,10 @@ printNotebookIterate n (x:xs) = do
                                   printEntry n x
                                   printNotebookIterate (n+1) xs
 
-printNotebook :: Notebook -> IO ()
-printNotebook = printNotebookIterate 0
+-- Print selected entries in notebook
+
+printNotebookFiltered :: (Entry -> Bool) -> Notebook -> IO ()
+printNotebookFiltered = printNotebookFilteredIterate 0
 
 printNotebookFilteredIterate :: Int
                                 -> (Entry -> Bool)
@@ -52,5 +41,25 @@ printNotebookFilteredIterate n f (x:xs)
                       printNotebookFilteredIterate (n+1) f xs
       | otherwise =   printNotebookFilteredIterate (n+1) f xs
 
-printNotebookFiltered :: (Entry -> Bool) -> Notebook -> IO ()
-printNotebookFiltered = printNotebookFilteredIterate 0
+-- Standard start
+
+printNotebookHeader :: IO ()
+printNotebookHeader = putStrLn $
+                      "No :: Name :: Date & time"
+                      ++ " :: DONE/TODO :: Recurrence"
+
+-- Render entry
+
+printEntry :: Int -> Entry -> IO ()
+printEntry n e = putStrLn $
+                  show n ++ " :: " ++
+                  (name . event) e ++ " :: " ++
+                  show ( (dateTime . event) e) ++
+                  " :: " ++ printDoneUndone e ++
+                  " :: " ++ show ((recurrence . event) e)
+
+-- Render status
+
+printDoneUndone :: Entry -> String
+printDoneUndone e | done e    = "DONE"
+                  | otherwise = "TODO"
